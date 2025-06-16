@@ -1,8 +1,8 @@
-# BEES Data Engineering – Breweries Case
+# 🍺 BEES Data Engineering – Breweries Pipeline
 
-## 🌿 Objetivo
+## 📌 Visão Geral
 
-Construir um pipeline de engenharia de dados completo, utilizando arquitetura Medallion com 3 camadas (bronze, prata e ouro), a partir da API [Open Brewery DB](https://www.openbrewerydb.org/), salvando dados em Delta Lake com Apache Iceberg. O pipeline utiliza microserviços em containers Docker com Kafka, Spark, Airflow, HDFS, Prometheus e Grafana.
+Este projeto tem como objetivo demonstrar a construção de um pipeline de dados completo, do consumo de dados via API à visualização de insights em dashboards. A arquitetura foi baseada no padrão **Medallion (Bronze, Silver, Gold)** e implementada com ferramentas robustas como **Kafka, Spark, Airflow, Prometheus e Grafana**, tudo orquestrado em containers Docker.
 
 ---
 
@@ -20,88 +20,116 @@ bees_pipeline/
 └── README.md
 ```
 
----
+## ⚙️ Arquitetura de Dados
 
-## ⚖️ Stack Utilizada
+### 🏁 **Staging Zone: Kafka**
+- Utiliza o **Apache Kafka** como zona de entrada (staging) dos dados oriundos da API pública [Open Brewery DB](https://www.openbrewerydb.org/).
+- Os dados são coletados de forma incremental paginada e publicados no tópico `breweries_raw`.
 
-* Apache Kafka (mensageria)
-* Apache Spark Structured Streaming (transformação)
-* Airflow (orquestração)
-* HDFS + Iceberg (armazenamento Delta Lake)
-* Prometheus + Grafana (monitoramento)
-* Docker Compose (containerização)
+> ⏱️ Todos os scripts possuem logs com **timestamp** de início e fim das execuções, garantindo rastreabilidade e controle de performance.
 
 ---
 
-## 🚀 Como Executar Localmente
+### 🥉 **Camada Bronze (Raw Layer)**
+- Persistência de dados crus no HDFS, organizados por data e particionados por carga.
+- Sem transformações aplicadas, apenas ingestão bruta dos dados consumidos via Kafka.
+- Essa camada assegura **reprocessamento confiável** e auditoria.
 
-### 1. Clonar o repositório
+---
+
+### 🥈 **Camada Silver (Curated Layer)**
+- Aplicação de **limpeza, deduplicação e padronização** dos dados.
+- Uso do Apache Spark estruturado para processar dados da Bronze e gerar a camada tratada.
+- Dados são organizados por localidade e categoria.
+
+---
+
+### 🥇 **Camada Gold (Analytics Layer)**
+- Geração de métricas agregadas, como quantidade de cervejarias por estado e tipo.
+- Criação de **tabelas analíticas** otimizadas para visualizações.
+- A cada execução, os dados gold são **reprocessados e atualizados** para análise rápida em dashboards.
+
+---
+
+
+## ▶️ Instruções de Uso
+
+### 1.1. 📦 Pré-requisitos
+
+- Docker e Docker Compose instalados na máquina
+
+### 1.2. Clonar o repositório
 
 ```bash
-git clone https://github.com/seuusuario/bees-breweries-pipeline.git
+git clone https://github.com/MaltaIgor/bees-breweries-pipeline.git
 cd bees-breweries-pipeline
 ```
 
-### 2. Subir os containers
+### 2. 🚀 Subindo a stack completa
+
+No terminal, execute:
 
 ```bash
 docker-compose up --build
 ```
+## 📈 Dashboards e Monitoramento
 
-Isso irá iniciar:
+### 📊 **Grafana**
+- Integrado ao **Prometheus** para exposição de métricas personalizadas dos scripts.
+- Acompanhamento em tempo real de:
+  - Tempo de execução por etapa
+  - Status das execuções
+  - Volume de dados processados
 
-* Kafka + Zookeeper
-* Spark (camada prata)
-* Airflow (com DAGs + exporter)
-* Prometheus (monitorando tudo)
-* Grafana (com dashboards prontos)
-
-### 3. Acessos locais
-
-| Serviço          | URL                                                            |
-| ---------------- | -------------------------------------------------------------- |
-| Airflow          | [http://localhost:8080](http://localhost:8080)                 |
-| Prometheus       | [http://localhost:9090](http://localhost:9090)                 |
-| Grafana          | [http://localhost:3000](http://localhost:3000)                 |
-| Spark JMX        | [http://localhost:7071/metrics](http://localhost:7071/metrics) |
-| Airflow Exporter | [http://localhost:9200/metrics](http://localhost:9200/metrics) |
-
-Login Grafana (default): `admin/admin`
+> Acesse o Grafana via `http://localhost:3000`  
+> Usuário: `admin` | Senha: `admin`
 
 ---
 
-## 📊 Arquitetura Medallion
+## ✅ Boas Práticas Adotadas
 
-### ✨ Bronze
-
-* Dados brutos recebidos do Kafka, formato JSON
-* Persistidos como estão, sem transformações
-
-### 🏢 Prata
-
-* Spark Structured Streaming
-* Transformação e particionamento por `state`
-* Gravado como Delta Table com Apache Iceberg
-
-### 🏆 Ouro
-
-* Spark Batch processa dados da prata
-* Agregados: quantidade de cervejarias por tipo e estado
-* Prontos para BI
+- Organização modular do código com separação clara por camada (Kafka Producer, Bronze, Silver, Gold).
+- Logs com timestamps em cada etapa.
+- Monitoramento completo com Prometheus e Grafana.
+- Uso de particionamento no HDFS para escalabilidade.
+- Containerização total com Docker e Docker Compose.
+- Scripts resilientes a falhas e ausência de dados com reintento automático.
 
 ---
 
-## 📊 Monitoramento
+## 🚀 Foco em Escalabilidade e Atendimento
 
-### Spark Structured Streaming
+### 🔍 Pontos Fortes:
+- Arquitetura desacoplada com **componentes independentes** (Kafka, Spark, Airflow, etc.).
+- Escalável horizontalmente com uso de containers.
+- Suporte a reprocessamento e rastreabilidade em todas as camadas.
+- Facilmente adaptável para ambientes de produção em nuvem ou clusters Spark.
 
-* JMX Exporter na porta 7071 expõe métricas JVM
-* Prometheus coleta e Grafana visualiza latência, throughput etc.
+### ⚠️ Limitações (devido ao escopo e tempo):
+- **Spark rodando em modo local** dentro do container, sem paralelização distribuída.
+- **HDFS com configuração mínima**, sem uso de tecnologias como Apache Ozone para armazenamento sofisticado.
+- **Falta de camada de autenticação/segurança** (por simplicidade e tempo).
+- Algumas análises poderiam ser mais ricas com mais tempo para exploração de dados.
 
-### Airflow
+---
 
-* Exporter customizado expõe falhas de DAG
-* Prometheus coleta via `9200`
+## 🔄 Alternativas Arquiteturais
+
+### 🧊 Apache Iceberg (em vez de HDFS tradicional)
+- **Prós:** Schema evolution, versionamento, integração com query engines modernas.
+- **Contras:** Requer setup mais complexo e engines compatíveis.
+
+### ☁️ Databricks (com Delta Lake)
+- **Prós:** Plataforma gerenciada, integração com notebooks, escalabilidade nativa, Delta Live Tables.
+- **Contras:** Custo elevado, dependência de vendor, menor controle granular.
+
+### ☁️ AWS Glue + S3 + Athena
+- **Prós:** Serverless, billing por query, altamente escalável e integrado ao ecossistema AWS.
+- **Contras:** Latência para consultas mais complexas, lock-in de plataforma.
+
+### ☁️ Azure Data Factory + Data Lake + Synapse
+- **Prós:** Conectividade nativa com produtos Microsoft, integração com Power BI.
+- **Contras:** Curva de aprendizado da suíte Azure, limitações de configuração avançada.
 
 ---
 
@@ -132,24 +160,11 @@ Incluído em etapas futuras:
 
 ---
 
-## 🚫 Problemas Conhecidos
+## 🔍 Considerações Finais
 
-* O container Spark precisa subir depois do Kafka. Já ajustado com `depends_on`, mas verificar delays de inicialização.
+> Este projeto foi desenvolvido com foco em **atendimento e escalabilidade**, utilizando ferramentas modernas e open source para construir uma arquitetura resiliente, auditável e facilmente expansível.
 
----
-
-## 🚀 Futuras melhorias
-
-* Incluir CI/CD com GitHub Actions
-* Rodar testes unitários
-* Substituir SQLite por Postgres no Airflow
-* Clusterizar com Kubernetes (K8s)
-
----
-
-## 🙏 Agradecimentos
-
-Desafio baseado na BEES Engineering Challenge. Projeto criado com foco em arquitetura de dados moderna, microserviços e monitoramento real.
+Apesar das limitações de tempo e infraestrutura (como Spark local e ausência de paralelização real), a arquitetura foi construída com fundamentos sólidos e boas práticas, e é totalmente extensível para ambientes de produção com upgrades pontuais.
 
 ---
 

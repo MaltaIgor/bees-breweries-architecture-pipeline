@@ -1,0 +1,26 @@
+{
+  "title": "Airflow Monitoramento",
+  "uid": "airflow-metrics",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "title": "Falhas em DAGs",
+      "type": "timeseries",
+      "id": 1,
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 9 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "airflow_dag_run_failed_total",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "10s"
+}
