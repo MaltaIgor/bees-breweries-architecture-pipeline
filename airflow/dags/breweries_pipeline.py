@@ -16,7 +16,7 @@ with DAG(
     'breweries_batch_pipeline',
     default_args=default_args,
     description='Pipeline batch breweries: silver e gold',
-    schedule_interval='*/1 * * * *',  # a cada 1 minuto
+    schedule_interval='*/1 * * * *', 
     start_date=days_ago(1),
     catchup=False,
     max_active_runs=1,
@@ -29,7 +29,6 @@ with DAG(
         auto_remove=True,
         docker_url='unix://var/run/docker.sock',
         network_mode='hadoop',
-        volumes=['/path/para/shared-data:/data'],  # ajuste para seu path real
         command='spark-submit batch_to_silver.py',
     )
 
@@ -40,7 +39,6 @@ with DAG(
         auto_remove=True,
         docker_url='unix://var/run/docker.sock',
         network_mode='hadoop',
-        volumes=['/path/para/shared-data:/data'],  # ajuste para seu path real
         command='spark-submit batch_to_gold.py',
     )
 
