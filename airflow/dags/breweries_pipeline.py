@@ -1,8 +1,8 @@
 from airflow import DAG
-from airflow.providers.docker.operators.docker import DockerOperator
+from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from datetime import timedelta
-
+import subprocess
 
 
 default_args = {
@@ -11,35 +11,36 @@ default_args = {
     'retries': 2,
     'retry_delay': timedelta(minutes=1),
 }
+def install_requirements():
+    subprocess.run(["pip", "install", "-r", "/opt/airflow/requirements.txt"], check=True)
+
+def run_batch_to_silver():
+    subprocess.run(["python", "/opt/airflow/scripts/batch_to_silver.py"], check=True)
+
+def run_batch_to_gold():
+    subprocess.run(["python", "/opt/airflow/scripts/batch_to_gold.py"], check=True)
 
 with DAG(
     'breweries_batch_pipeline',
     default_args=default_args,
     description='Pipeline batch breweries: silver e gold',
-    schedule_interval='*/1 * * * *', 
+    schedule_interval='*/1 * * * *',
     start_date=days_ago(1),
     catchup=False,
     max_active_runs=1,
 ) as dag:
-
-    batch_to_silver = DockerOperator(
+    install_task = PythonOperator(
+        task_id="install_dependencies",
+        python_callable=install_requirements
+    )
+    batch_to_silver = PythonOperator(
         task_id='batch_to_silver',
-        image='spark-silver:latest',
-        container_name='batch_to_silver',
-        auto_remove=True,
-        docker_url='unix://var/run/docker.sock',
-        network_mode='hadoop',
-        command='spark-submit batch_to_silver.py',
+        python_callable=run_batch_to_silver,
     )
 
-    batch_to_gold = DockerOperator(
+    batch_to_gold = PythonOperator(
         task_id='batch_to_gold',
-        image='spark-gold:latest',
-        container_name='batch_to_gold',
-        auto_remove=True,
-        docker_url='unix://var/run/docker.sock',
-        network_mode='hadoop',
-        command='spark-submit batch_to_gold.py',
+        python_callable=run_batch_to_gold,
     )
 
-    batch_to_silver >> batch_to_gold
+    install_task >> batch_to_silver >> batch_to_gold

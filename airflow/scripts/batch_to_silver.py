@@ -44,7 +44,7 @@ def main():
         .getOrCreate()
     )
 
-    bronze_path = "data/breweries/bronze"
+    bronze_path = "data/breweries/bronze/breweries_bronze.json"
     silver_path = "data/breweries/silver"
 
     try:

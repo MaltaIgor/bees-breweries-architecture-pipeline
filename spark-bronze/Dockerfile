@@ -1,17 +1,14 @@
- 
-# Usamos a imagem oficial Spark com Hadoop
-FROM bitnami/spark:3.5.0
+FROM python:3.10-slim
 
-USER root
+# Define diretório de trabalho
+WORKDIR /app
 
+# Copia arquivos de requisitos e instala dependências
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar o código
-WORKDIR /app
+# Copia código fonte
 COPY stream_to_bronze.py .
 
 CMD ["python", "stream_to_bronze.py"]
-
-
-

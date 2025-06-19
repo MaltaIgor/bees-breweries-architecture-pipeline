@@ -28,7 +28,15 @@ services:
       - zookeeper
     networks:
       - hadoop
-
+      #comando kcat ->  kcat -b kafka:9092 -t breweries_raw
+  kcat:
+    image: edenhill/kcat:1.7.1
+    container_name: kcat
+    depends_on:
+      - kafka
+    entrypoint: ["sh", "-c", "tail -f /dev/null"]
+    networks:
+      - hadoop
 ########################
 # KAFKA - EXECUTION
 ########################
@@ -51,28 +59,7 @@ services:
     container_name: stream_to_bronze
     depends_on:
       - kafka
-    volumes:
-      - shared-data:/data
-    networks:
-      - hadoop
-
-########################
-# BATCH - SILVER/GOLD
-########################
-
-  batch_to_silver:
-    build: ./spark-silver
-    image: spark-silver:latest
-    container_name: batch_to_silver
-    volumes:
-      - shared-data:/data
-    networks:
-      - hadoop
-
-  batch_to_gold:
-    build: ./spark-gold
-    image: spark-gold:latest 
-    container_name: batch_to_gold
+      - kcat
     volumes:
       - shared-data:/data
     networks:
@@ -94,10 +81,14 @@ services:
       - _AIRFLOW_WWW_USER_CREATE=True
       - _AIRFLOW_WWW_USER_USERNAME=admin
       - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+      - SPARK_HOME=/opt/spark
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - /var/run/docker.sock:/var/run/docker.sock 
       - shared-data:/data
+      - ./airflow/scripts:/opt/airflow/scripts
+      - ./requirements.txt:/requirements.txt
     depends_on:
       - kafka
     networks:

@@ -1,19 +1,32 @@
 # 🍺 BEES Data Engineering – Breweries Pipeline
 
-## 📌 Visão Geral
+## 🚧 Status do Projeto e Contexto
+Este projeto foi idealizado para demonstrar a construção de um pipeline completo de dados, utilizando uma arquitetura robusta baseada na medallion architecture (bronze, silver e gold), com toda a esteira de infraestrutura, engenharia de dados, QA, visualização e arquitetura de solução. O objetivo foi evidenciar conhecimento prático e aprofundado nas seguintes áreas:
 
-Este projeto tem como objetivo demonstrar a construção de um pipeline de dados completo, do consumo de dados via API à visualização de insights em dashboards. A arquitetura foi baseada no padrão **Medallion (Bronze, Silver, Gold)** e implementada com ferramentas robustas como **Kafka, Spark, Airflow, Prometheus e Grafana**, tudo orquestrado em containers Docker.
+🛠 Infraestrutura em containers Docker com múltiplos serviços orquestrados;
 
----
+🧱 Engenharia de dados batch e streaming com Apache Spark e Kafka;
+
+📂 Armazenamento em camadas com formatos otimizados (JSON, Parquet);
+
+🧪 Boas práticas de qualidade de dados e monitoramento com Prometheus e Grafana;
+
+📊 Visualização e análise exploratória com Matplotlib e Pandas;
+
+🧠 Desenho arquitetural escalável, focado em boas práticas de pipelines de produção.
+
+No entanto, devido à conciliação com um momento especial e pessoal — **meu casamento e lua de mel** —, o projeto segue em fase final de desenvolvimento, com o foco atual na resolução de bugs relacionados ao compartilhamento de arquivos entre containers Docker, especificamente nas etapas Silver e Gold do pipeline.
+
+Apesar disso, para garantir a entrega de uma versão plenamente funcional e demonstrativa, foi desenvolvido um notebook Jupyter chamado **poc_breweries_pipeline.ipynb** e executado no **Google Colab**, que simula todo o pipeline de forma linear, do consumo da API até a geração de visualizações analíticas. Este notebook representa fielmente a lógica e os resultados esperados do pipeline em produção.
 
 ## 📂 Estrutura do Projeto
 
 ```
 bees_pipeline/
 ├── camada_bronze/               # Coleta dados brutos da API via Kafka
-├── camada_prata/               # Spark Streaming transforma e grava em Delta Lake
-├── camada_ouro/                # Batch para agregados por tipo/localização
 ├── airflow/                    # DAGs e monitoramento customizado
+  ├── camada_prata/               # Spark Streaming transforma e grava em Delta Lake
+  ├── camada_ouro/                # Batch para agregados por tipo/localização
 ├── prometheus/                 # Configuração do Prometheus
 ├── grafana/                    # Dashboards do Grafana
 ├── docker-compose.yml          # Orquestração de todos os serviços
@@ -21,6 +34,44 @@ bees_pipeline/
 ```
 
 ## ⚙️ Arquitetura de Dados
+
+
+📡 API Open Brewery DB
+          │
+          ▼
+🛰️ Produção e Envio dos Dados (Kafka Producer)
+          │
+          ▼
+📥 Kafka Topic `breweries_raw`
+          │
+          ▼
+🧱 Camada Bronze (Raw Zone - HDFS)
+          │
+          ▼
+Inicio (Airflow Trigger DAG)
+          │
+          ▼
+🧪 Transformação com PySpark
+          │
+          ▼
+🥈 Camada Silver (Staging/Curated)
+          │
+          ▼
+🧹 Limpeza + Deduplicação + Enriquecimento
+          │
+          ▼
+🏅 Camada Gold
+          │
+          ▼
+🏁 Fim (DAG Success)
+          │
+          ▼
+📈 Monitoramento com Prometheus + Logs
+          │
+          ▼
+📊 Dashboard (Grafana)
+
+
 
 ### 🏁 **Staging Zone: Kafka**
 - Utiliza o **Apache Kafka** como zona de entrada (staging) dos dados oriundos da API pública [Open Brewery DB](https://www.openbrewerydb.org/).
@@ -72,6 +123,12 @@ No terminal, execute:
 ```bash
 docker-compose up --build
 ```
+
+### 3. Credenciais de acesso Airflow
+
+Abrir logs do airflow para copiar a senha do Usuário: `admin`.
+
+
 ## 📈 Dashboards e Monitoramento
 
 ### 📊 **Grafana**
